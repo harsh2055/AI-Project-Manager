@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://ai-project-manager-zoqe.onrender.com/api/$1" },
+    { "source": "/static/(.*)", "destination": "/frontend/$1" },
+    { "source": "/(.*)", "destination": "/frontend/index.html" }
+  ]
+}

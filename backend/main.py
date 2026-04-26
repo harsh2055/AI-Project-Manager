@@ -15,19 +15,28 @@ from backend.services.report_service import load_persisted_reports
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Run database migrations
+    # Startup: Ensure schema is up to date
     try:
-        from alembic.config import Config
-        from alembic import command
-        # Path to alembic.ini from backend/main.py
-        base_dir = os.path.dirname(os.path.dirname(__file__))
-        ini_path = os.path.join(base_dir, "alembic.ini")
-        alembic_cfg = Config(ini_path)
-        alembic_cfg.set_main_option("script_location", os.path.join(base_dir, "alembic"))
-        command.upgrade(alembic_cfg, "head")
-        print("Migrations applied successfully")
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        columns = [c["name"] for c in inspector.get_columns("users")]
+        
+        if "webhook_secret" not in columns:
+            print("Detected missing webhook_secret column. Migrating...")
+            with engine.begin() as conn:
+                # 1. Add column as nullable
+                conn.execute(text("ALTER TABLE users ADD COLUMN webhook_secret VARCHAR"))
+                # 2. Populate with ID
+                conn.execute(text("UPDATE users SET webhook_secret = id WHERE webhook_secret IS NULL"))
+                
+                # PostgreSQL specific: Set NOT NULL and UNIQUE
+                if "postgresql" in str(engine.url):
+                    conn.execute(text("ALTER TABLE users ALTER COLUMN webhook_secret SET NOT NULL"))
+                    conn.execute(text("ALTER TABLE users ADD CONSTRAINT uq_users_webhook_secret UNIQUE (webhook_secret)"))
+                
+                print("Manual migration successful")
     except Exception as e:
-        print(f"Migration error: {e}")
+        print(f"Manual migration error: {e}")
 
     # Ensure tables exist (fallback)
     Base.metadata.create_all(bind=engine)
@@ -60,7 +69,7 @@ app.include_router(jobs.router, prefix="/api/jobs", tags=["jobs"])
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "2.0.1"}
+    return {"status": "ok", "version": "2.0.2"}
 
 
 @app.get("/debug/schema")

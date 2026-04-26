@@ -28,14 +28,9 @@ services:
       - key: JWT_SECRET_KEY
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: ai-pm-db
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromService:
-          name: ai-pm-redis
-          type: redis
-          property: connectionString
+        sync: false
       - key: ENABLE_GH_COMMENTS
         value: "false"
 
@@ -61,14 +56,9 @@ services:
       - key: JWT_SECRET_KEY
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: ai-pm-db
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromService:
-          name: ai-pm-redis
-          type: redis
-          property: connectionString
+        sync: false
 
   # ── Celery Worker — Autofix ─────────────────
   - type: worker
@@ -86,20 +76,6 @@ services:
       - key: JWT_SECRET_KEY
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: ai-pm-db
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromService:
-          name: ai-pm-redis
-          type: redis
-          property: connectionString
-
-databases:
-  - name: ai-pm-db
-    plan: free
-    databaseName: ai_pm_db
-    user: ai_pm_user
-
-# Note: Add a Redis instance manually in Render dashboard
-# under "New > Redis" and link it to services above
+        sync: false

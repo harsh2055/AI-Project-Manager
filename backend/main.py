@@ -38,10 +38,10 @@ app.add_middleware(
 )
 
 # API Routers
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(webhook.router, prefix="/webhook", tags=["webhook"])
-app.include_router(reports.router, prefix="/reports", tags=["reports"])
-app.include_router(jobs.router, prefix="/jobs", tags=["jobs"])
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(webhook.router, prefix="/api/webhook", tags=["webhook"])
+app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
+app.include_router(jobs.router, prefix="/api/jobs", tags=["jobs"])
 
 
 @app.get("/health")

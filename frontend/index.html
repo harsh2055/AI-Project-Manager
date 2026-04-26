@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Project Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <div class="noise-overlay"></div>
+  <div class="scan-lines"></div>
+
+  <!-- Auth Modal -->
+  <div id="authModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="authModalTitle">// SIGN IN</span>
+        <button class="modal-close" onclick="closeAuthModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="authError" class="auth-error hidden"></div>
+        <div id="loginForm">
+          <div class="field-group">
+            <label class="field-label">EMAIL</label>
+            <input type="email" id="loginEmail" class="field-input" placeholder="dev@example.com"/>
+          </div>
+          <div class="field-group">
+            <label class="field-label">PASSWORD</label>
+            <input type="password" id="loginPassword" class="field-input" placeholder="••••••••"/>
+          </div>
+          <button class="btn-primary" onclick="handleLogin()">SIGN IN</button>
+          <div class="auth-switch">No account? <span class="link" onclick="switchToSignup()">Sign up</span></div>
+        </div>
+        <div id="signupForm" class="hidden">
+          <div class="field-group">
+            <label class="field-label">USERNAME</label>
+            <input type="text" id="signupUsername" class="field-input" placeholder="devuser"/>
+          </div>
+          <div class="field-group">
+            <label class="field-label">EMAIL</label>
+            <input type="email" id="signupEmail" class="field-input" placeholder="dev@example.com"/>
+          </div>
+          <div class="field-group">
+            <label class="field-label">PASSWORD</label>
+            <input type="password" id="signupPassword" class="field-input" placeholder="••••••••"/>
+          </div>
+          <button class="btn-primary" onclick="handleSignup()">CREATE ACCOUNT</button>
+          <div class="auth-switch">Have an account? <span class="link" onclick="switchToLogin()">Sign in</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-mark">◈</div>
+      <div>
+        <div class="logo-text">AI PROJECT MANAGER</div>
+        <div class="logo-sub">automated code intelligence · v2.0</div>
+      </div>
+    </div>
+    <nav class="header-nav">
+      <button class="nav-btn active" onclick="showView('dashboard')" id="navDashboard">DASHBOARD</button>
+      <button class="nav-btn" onclick="showView('jobs')" id="navJobs">JOBS <span id="activeJobsBadge" class="job-badge hidden">0</span></button>
+    </nav>
+    <div class="header-right">
+      <div class="status-indicator">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">CONNECTING</span>
+      </div>
+      <div id="userArea">
+        <button class="btn-ghost" onclick="openAuthModal()">SIGN IN</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Dashboard View -->
+  <main class="main" id="viewDashboard">
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-num" id="statTotal">—</span>
+        <span class="stat-lbl">REPORTS</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num danger" id="statCritical">—</span>
+        <span class="stat-lbl">CRITICAL ≥7</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num" id="statAvg">—</span>
+        <span class="stat-lbl">AVG SEVERITY</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num accent" id="statLast" style="font-size:0.9rem">—</span>
+        <span class="stat-lbl">LAST SCAN</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item chart-stat">
+        <canvas id="trendChart" width="220" height="50"></canvas>
+        <span class="stat-lbl">30-DAY TREND</span>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="filter-left">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search repository..." oninput="debounceFilter()"/>
+        <div class="filter-pills">
+          <button class="pill active" data-filter="all" onclick="setFilter('all')">ALL</button>
+          <button class="pill" data-filter="security" onclick="setFilter('security')">SECURITY</button>
+          <button class="pill" data-filter="error" onclick="setFilter('error')">ERRORS</button>
+          <button class="pill" data-filter="warning" onclick="setFilter('warning')">WARNINGS</button>
+          <button class="pill" data-filter="high" onclick="setFilter('high')">CRITICAL</button>
+        </div>
+      </div>
+      <div class="filter-right">
+        <select class="sort-select" onchange="setSortAndReload(this.value)">
+          <option value="newest">NEWEST FIRST</option>
+          <option value="severity">HIGHEST SEVERITY</option>
+          <option value="issues">MOST ISSUES</option>
+        </select>
+        <button class="btn-ghost small" onclick="loadReports()">↻ REFRESH</button>
+      </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+      <!-- Reports List -->
+      <section class="panel reports-panel">
+        <div class="panel-hdr">
+          <span>// REPORTS</span>
+          <span id="reportCount" class="dim-text"></span>
+        </div>
+        <div id="reportsList" class="reports-list">
+          <div class="state-loading"><span class="blink">█</span> Loading...</div>
+        </div>
+      </section>
+
+      <!-- Detail Panel -->
+      <section class="panel detail-panel">
+        <div class="panel-hdr" id="detailHdr">
+          <span id="detailTitle">// SELECT A REPORT</span>
+          <div class="detail-actions" id="detailActions" style="display:none">
+            <span id="detailScore" class="score-pill"></span>
+            <button class="btn-autofix" id="autofixBtn" onclick="triggerAutoFix()" style="display:none">⚡ AUTO-FIX PR</button>
+          </div>
+        </div>
+        <div id="reportDetail" class="report-detail">
+          <div class="state-empty">
+            <div class="empty-glyph">◈</div>
+            <p>Select a report to inspect issues and AI suggestions</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Jobs View -->
+  <main class="main hidden" id="viewJobs">
+    <div class="jobs-header">
+      <h2 class="section-title">// ASYNC JOB QUEUE</h2>
+      <button class="btn-ghost small" onclick="loadJobs()">↻ REFRESH</button>
+    </div>
+    <div id="jobsList" class="jobs-list">
+      <div class="state-loading"><span class="blink">█</span> Loading jobs...</div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>AI PROJECT MANAGER v2.0</span>
+    <span class="sep">//</span>
+    <span id="apiEndpoint">API: localhost:8000</span>
+    <span class="sep">//</span>
+    <span id="footerClock"></span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

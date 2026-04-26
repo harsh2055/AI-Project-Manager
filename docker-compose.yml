@@ -1,0 +1,103 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ai_pm_user
+      POSTGRES_PASSWORD: localpassword
+      POSTGRES_DB: ai_pm_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_pm_user -d ai_pm_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ───────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── FastAPI Backend ─────────────────────────
+  api:
+    build: .
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app
+      - /tmp/ai_pm_repos:/tmp/ai_pm_repos
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://ai_pm_user:localpassword@postgres:5432/ai_pm_db
+      REDIS_URL: redis://redis:6379/0
+      PYTHONPATH: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Celery Worker (analysis queue) ──────────
+  worker-analysis:
+    build: .
+    command: celery -A backend.workers.celery_app worker --loglevel=info -Q analysis -c 2
+    volumes:
+      - .:/app
+      - /tmp/ai_pm_repos:/tmp/ai_pm_repos
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://ai_pm_user:localpassword@postgres:5432/ai_pm_db
+      REDIS_URL: redis://redis:6379/0
+      PYTHONPATH: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Celery Worker (autofix queue) ───────────
+  worker-autofix:
+    build: .
+    command: celery -A backend.workers.celery_app worker --loglevel=info -Q autofix -c 1
+    volumes:
+      - .:/app
+      - /tmp/ai_pm_repos:/tmp/ai_pm_repos
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://ai_pm_user:localpassword@postgres:5432/ai_pm_db
+      REDIS_URL: redis://redis:6379/0
+      PYTHONPATH: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Celery Flower (monitoring UI) ───────────
+  flower:
+    build: .
+    command: celery -A backend.workers.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      PYTHONPATH: /app
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:

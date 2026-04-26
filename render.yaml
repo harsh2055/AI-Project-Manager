@@ -1,0 +1,105 @@
+services:
+
+  # ── FastAPI Backend ─────────────────────────
+  - type: web
+    name: ai-pm-api
+    env: python
+    plan: starter
+    pythonVersion: 3.11.9
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHONPATH
+        value: .
+      - key: LLM_PROVIDER
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TOGETHER_API_KEY
+        sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: HF_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-pm-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: ai-pm-redis
+          type: redis
+          property: connectionString
+      - key: ENABLE_GH_COMMENTS
+        value: "false"
+
+  # ── Celery Worker — Analysis ────────────────
+  - type: worker
+    name: ai-pm-worker-analysis
+    env: python
+    plan: starter
+    pythonVersion: 3.11.9
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: celery -A backend.workers.celery_app worker --loglevel=info -Q analysis -c 2
+    envVars:
+      - key: PYTHONPATH
+        value: .
+      - key: LLM_PROVIDER
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TOGETHER_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-pm-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: ai-pm-redis
+          type: redis
+          property: connectionString
+
+  # ── Celery Worker — Autofix ─────────────────
+  - type: worker
+    name: ai-pm-worker-autofix
+    env: python
+    plan: starter
+    pythonVersion: 3.11.9
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: celery -A backend.workers.celery_app worker --loglevel=info -Q autofix -c 1
+    envVars:
+      - key: PYTHONPATH
+        value: .
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-pm-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: ai-pm-redis
+          type: redis
+          property: connectionString
+
+databases:
+  - name: ai-pm-db
+    plan: free
+    databaseName: ai_pm_db
+    user: ai_pm_user
+
+# Note: Add a Redis instance manually in Render dashboard
+# under "New > Redis" and link it to services above

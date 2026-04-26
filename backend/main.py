@@ -15,7 +15,21 @@ from backend.services.report_service import load_persisted_reports
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # Startup: Run database migrations
+    try:
+        from alembic.config import Config
+        from alembic import command
+        # Path to alembic.ini from backend/main.py
+        base_dir = os.path.dirname(os.path.dirname(__file__))
+        ini_path = os.path.join(base_dir, "alembic.ini")
+        alembic_cfg = Config(ini_path)
+        alembic_cfg.set_main_option("script_location", os.path.join(base_dir, "alembic"))
+        command.upgrade(alembic_cfg, "head")
+        print("Migrations applied successfully")
+    except Exception as e:
+        print(f"Migration error: {e}")
+
+    # Ensure tables exist (fallback)
     Base.metadata.create_all(bind=engine)
     load_persisted_reports()
     yield

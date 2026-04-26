@@ -9,6 +9,8 @@ load_dotenv()
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
+print(f"--- [CELERY] Starting Worker with Redis: {REDIS_URL.split('@')[-1]} ---")
+
 celery_app = Celery(
     "ai_project_manager",
     broker=REDIS_URL,

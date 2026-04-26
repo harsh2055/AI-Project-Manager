@@ -1,13 +1,13 @@
 services:
 
-  # ── FastAPI Backend ─────────────────────────
+  # ── AI Project Manager (Combined API + Worker) ────────────────
   - type: web
-    name: ai-pm-api
+    name: ai-project-manager
     env: python
     plan: starter
     pythonVersion: 3.11.9
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    startCommand: bash -c "celery -A backend.workers.celery_app worker --loglevel=info -Q analysis,autofix --concurrency=1 & uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHONPATH
         value: .
@@ -33,49 +33,5 @@ services:
         sync: false
       - key: ENABLE_GH_COMMENTS
         value: "false"
-
-  # ── Celery Worker — Analysis ────────────────
-  - type: worker
-    name: ai-pm-worker-analysis
-    env: python
-    plan: starter
-    pythonVersion: 3.11.9
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: celery -A backend.workers.celery_app worker --loglevel=info -Q analysis -c 2
-    envVars:
-      - key: PYTHONPATH
-        value: .
-      - key: LLM_PROVIDER
-        sync: false
-      - key: GROQ_API_KEY
-        sync: false
-      - key: TOGETHER_API_KEY
-        sync: false
-      - key: GITHUB_TOKEN
-        sync: false
-      - key: JWT_SECRET_KEY
-        sync: false
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-
-  # ── Celery Worker — Autofix ─────────────────
-  - type: worker
-    name: ai-pm-worker-autofix
-    env: python
-    plan: starter
-    pythonVersion: 3.11.9
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: celery -A backend.workers.celery_app worker --loglevel=info -Q autofix -c 1
-    envVars:
-      - key: PYTHONPATH
-        value: .
-      - key: GITHUB_TOKEN
-        sync: false
-      - key: JWT_SECRET_KEY
-        sync: false
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
+      - key: TEMP_DIR
+        value: "/tmp/repos"

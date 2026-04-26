@@ -23,6 +23,8 @@ def _update_job(db, job_id: str, **kwargs):
 
 @celery_app.task(bind=True, name="backend.workers.tasks.analyze_repository")
 def analyze_repository(self, job_id: str, payload: dict):
+    print(f"--- [CELERY] Task Received: analyze_repository (Job: {job_id}) ---")
+    logger.info(f"Task analyze_repository received for job {job_id}")
     """
     Main analysis pipeline:
     1. Clone repo at commit
@@ -108,6 +110,8 @@ def analyze_repository(self, job_id: str, payload: dict):
 
 @celery_app.task(bind=True, name="backend.workers.tasks.apply_autofix")
 def apply_autofix(self, job_id: str, report_id: str, github_token: str, repo_full_name: str):
+    print(f"--- [CELERY] Task Received: apply_autofix (Job: {job_id}) ---")
+    logger.info(f"Task apply_autofix received for job {job_id}")
     """
     Auto-fix pipeline:
     1. Clone repo

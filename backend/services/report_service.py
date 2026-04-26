@@ -71,7 +71,9 @@ def create_report_db(
 def get_report_db(db: Session, report_id: str, user_id: Optional[str] = None) -> Optional[AnalysisReport]:
     q = db.query(orm.Report).filter(orm.Report.id == report_id)
     if user_id:
-        q = q.filter(orm.Report.user_id == user_id)
+        # User sees their own reports OR anonymous webhook reports
+        from sqlalchemy import or_
+        q = q.filter(or_(orm.Report.user_id == user_id, orm.Report.user_id == None))
     report_orm = q.first()
     if not report_orm:
         return None
@@ -88,7 +90,9 @@ def list_reports_db(
 ) -> List[ReportSummary]:
     q = db.query(orm.Report)
     if user_id:
-        q = q.filter(orm.Report.user_id == user_id)
+        # Allow users to see anonymous (webhook) reports + their own
+        from sqlalchemy import or_
+        q = q.filter(or_(orm.Report.user_id == user_id, orm.Report.user_id == None))
     if severity_min is not None:
         q = q.filter(orm.Report.severity_score >= severity_min)
     if repository:
@@ -121,7 +125,8 @@ def get_severity_trend(db: Session, user_id: Optional[str] = None, days: int = 3
         func.count(orm.Report.id).label("count"),
     ).filter(orm.Report.created_at >= cutoff)
     if user_id:
-        q = q.filter(orm.Report.user_id == user_id)
+        from sqlalchemy import or_
+        q = q.filter(or_(orm.Report.user_id == user_id, orm.Report.user_id == None))
     rows = q.group_by(func.date(orm.Report.created_at)).order_by("date").all()
     return [{"date": str(r.date), "avg_score": round(r.avg_score, 2), "count": r.count} for r in rows]
 

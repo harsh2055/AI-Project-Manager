@@ -21,7 +21,8 @@ def list_jobs(
 ):
     q = db.query(orm.Job)
     if current_user:
-        q = q.filter(orm.Job.user_id == current_user.id)
+        from sqlalchemy import or_
+        q = q.filter(or_(orm.Job.user_id == current_user.id, orm.Job.user_id == None))
     if status:
         q = q.filter(orm.Job.status == status)
     jobs = q.order_by(orm.Job.created_at.desc()).limit(limit).all()
@@ -36,7 +37,8 @@ def get_job(
 ):
     q = db.query(orm.Job).filter(orm.Job.id == job_id)
     if current_user:
-        q = q.filter(orm.Job.user_id == current_user.id)
+        from sqlalchemy import or_
+        q = q.filter(or_(orm.Job.user_id == current_user.id, orm.Job.user_id == None))
     job = q.first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")

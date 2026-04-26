@@ -32,14 +32,34 @@ function sevClass(score) {
 }
 
 function fmtDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  if (!iso) return '—';
+  // If no timezone specified, append Z to force UTC interpretation
+  const dateStr = (iso.includes('Z') || iso.includes('+')) ? iso : iso + 'Z';
+  const d = new Date(dateStr);
+  return d.toLocaleString('en-IN', { 
+    day: '2-digit', 
+    month: 'short', 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: true
+  });
 }
 
 /* ── Clock ───────────────────────────────────────────────────── */
 setInterval(() => {
   const el = document.getElementById('footerClock');
-  if (el) el.textContent = new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+  if (el) {
+    const now = new Date();
+    el.textContent = now.toLocaleString('en-IN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).replace(',', '') + ' LOCAL';
+  }
 }, 1000);
 
 /* ── Health ──────────────────────────────────────────────────── */

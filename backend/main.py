@@ -46,7 +46,15 @@ app.include_router(jobs.router, prefix="/api/jobs", tags=["jobs"])
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "2.0.0"}
+    return {"status": "ok", "version": "2.0.1"}
+
+
+@app.get("/debug/schema")
+async def debug_schema():
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    columns = inspector.get_columns("users")
+    return {"users_columns": [c["name"] for c in columns]}
 
 
 # Serve frontend

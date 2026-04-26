@@ -425,6 +425,29 @@ body {
 .blink { animation: blink 1s step-end infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
+/* ── Webhook Info Panel ───────────────────────────────────────── */
+.webhook-info-panel {
+  margin: 1.2rem 2rem 0;
+  background: var(--bg2);
+  border: 1px solid var(--border-bright);
+}
+.webhook-content { padding: 1.2rem; display: flex; flex-direction: column; gap: 1.2rem; }
+.webhook-url-box { background: var(--bg); border: 1px solid var(--border); padding: 1rem; }
+.webhook-url-box label { font-size: 0.55rem; color: var(--amber); letter-spacing: 0.1em; margin-bottom: 0.6rem; display: block; }
+.url-input-group { display: flex; gap: 0.5rem; }
+.url-input-group input { 
+  flex: 1; background: var(--bg2); border: 1px solid var(--border); 
+  color: var(--text-bright); font-family: var(--font-mono); font-size: 0.72rem; 
+  padding: 0.5rem 0.8rem; outline: none; 
+}
+.webhook-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+.step { font-size: 0.65rem; color: var(--text); line-height: 1.4; display: flex; gap: 0.6rem; align-items: start; }
+.step span { 
+  background: var(--bg3); color: var(--amber); width: 1.4rem; height: 1.4rem; 
+  display: flex; align-items: center; justify-content: center; border-radius: 50%; 
+  font-size: 0.6rem; font-weight: 800; flex-shrink: 0; border: 1px solid var(--border);
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .content-grid { grid-template-columns: 1fr; }
@@ -432,4 +455,5 @@ body {
   .header { padding: 0.85rem 1rem; }
   .filter-bar { padding: 0.6rem 1rem; flex-direction: column; align-items: flex-start; }
   .chart-stat { display: none; }
+  .webhook-info-panel { margin: 1rem; }
 }

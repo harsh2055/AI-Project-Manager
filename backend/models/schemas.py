@@ -88,6 +88,7 @@ class UserResponse(BaseModel):
     email: str
     username: str
     github_username: Optional[str] = None
+    webhook_secret: str
     created_at: datetime
 
     class Config:

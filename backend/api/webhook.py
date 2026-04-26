@@ -14,12 +14,16 @@ from backend.workers.tasks import analyze_repository
 router = APIRouter()
 
 
-@router.post("/github")
-async def github_webhook(request: Request, db: Session = Depends(get_db)):
+@router.post("/github/{secret}")
+async def github_webhook_secure(secret: str, request: Request, db: Session = Depends(get_db)):
     """
-    Receive GitHub webhook → validate → queue async job.
-    Returns immediately with job_id.
+    Receive GitHub webhook with user secret → validate → queue async job.
     """
+    # Find user by secret
+    user = db.query(orm.User).filter(orm.User.webhook_secret == secret).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Invalid webhook secret")
+
     result = await parse_webhook(request)
 
     # ping event returns dict directly
@@ -28,9 +32,10 @@ async def github_webhook(request: Request, db: Session = Depends(get_db)):
 
     payload = result
 
-    # Create job record
+    # Create job record associated with user
     job = orm.Job(
         id=str(uuid.uuid4()),
+        user_id=user.id,
         repository=payload.repo_full_name,
         commit_sha=payload.commit_sha,
         branch=payload.branch,
@@ -50,7 +55,7 @@ async def github_webhook(request: Request, db: Session = Depends(get_db)):
         "changed_files": payload.changed_files,
         "pr_number": payload.pr_number,
         "github_token": github_token,
-        "user_id": None,  # Webhook calls are unauthenticated
+        "user_id": user.id,
     }
 
     # Queue Celery task
@@ -68,3 +73,11 @@ async def github_webhook(request: Request, db: Session = Depends(get_db)):
         "repository": payload.repo_full_name,
         "commit": payload.commit_sha[:8],
     }
+
+
+@router.post("/github")
+async def github_webhook_legacy(request: Request, db: Session = Depends(get_db)):
+    """
+    Legacy anonymous webhook. Deprecated.
+    """
+    return await github_webhook_secure("legacy", request, db)

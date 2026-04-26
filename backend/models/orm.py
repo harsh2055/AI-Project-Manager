@@ -21,6 +21,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     github_token = Column(String, nullable=True)
     github_username = Column(String, nullable=True)
+    webhook_secret = Column(String, unique=True, nullable=False, default=gen_uuid)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -164,6 +164,26 @@
 
   <!-- Jobs View -->
   <main class="main hidden" id="viewJobs">
+    <div class="webhook-info-panel hidden" id="webhookInfoPanel">
+      <div class="panel-hdr">// WEBHOOK CONFIGURATION</div>
+      <div class="webhook-content">
+        <p class="dim-text">Connect your GitHub repositories to trigger automatic analysis on every commit or PR.</p>
+        <div class="webhook-url-box">
+          <label>YOUR SECURE PAYLOAD URL</label>
+          <div class="url-input-group">
+            <input type="text" id="webhookUrlInput" readonly value=""/>
+            <button class="btn-primary small" onclick="copyWebhookUrl()">COPY URL</button>
+          </div>
+        </div>
+        <div class="webhook-steps">
+          <div class="step"><span>1</span> Go to <strong>Repo Settings > Webhooks > Add webhook</strong></div>
+          <div class="step"><span>2</span> Paste the <strong>Payload URL</strong> above</div>
+          <div class="step"><span>3</span> Set Content type to <strong>application/json</strong></div>
+          <div class="step"><span>4</span> Select <strong>Just the push event</strong> or choose individual events</div>
+        </div>
+      </div>
+    </div>
+
     <div class="jobs-header">
       <h2 class="section-title">// ASYNC JOB QUEUE</h2>
       <button class="btn-ghost small" onclick="loadJobs()">↻ REFRESH</button>

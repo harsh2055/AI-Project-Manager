@@ -193,9 +193,27 @@ function renderUserArea() {
         <span class="user-chip">@<span>${esc(state.user.username)}</span></span>
         <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
       </div>`;
+    
+    // Update Webhook URL
+    const baseUrl = window.location.origin;
+    const webhookUrl = `${baseUrl}/api/webhook/github/${state.user.webhook_secret}`;
+    const input = document.getElementById('webhookUrlInput');
+    if (input) input.value = webhookUrl;
+    document.getElementById('webhookInfoPanel')?.classList.remove('hidden');
   } else {
     area.innerHTML = `<button class="btn-ghost" onclick="openAuthModal()">SIGN IN</button>`;
+    document.getElementById('webhookInfoPanel')?.classList.add('hidden');
   }
+}
+
+function copyWebhookUrl() {
+  const input = document.getElementById('webhookUrlInput');
+  input.select();
+  document.execCommand('copy');
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = 'COPIED!';
+  setTimeout(() => btn.textContent = originalText, 2000);
 }
 
 /* ── Trend Chart ─────────────────────────────────────────────── */

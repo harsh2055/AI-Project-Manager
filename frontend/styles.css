@@ -124,7 +124,14 @@ body {
 }
 
 .header-left { display: flex; gap: 0.9rem; align-items: center; flex-shrink: 0; }
-.logo-mark { font-size: 1.6rem; color: var(--amber); animation: pulse 3s ease-in-out infinite; }
+.logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  box-shadow: 0 0 12px var(--amber-glow);
+  border: 1px solid rgba(240, 165, 0, 0.15);
+  object-fit: cover;
+}
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .logo-text { font-family: var(--font-display); font-weight: 800; font-size: 1rem; letter-spacing: 0.14em; color: var(--text-bright); }
 .logo-sub { font-size: 0.58rem; color: var(--text-dim); letter-spacing: 0.08em; margin-top: 1px; }

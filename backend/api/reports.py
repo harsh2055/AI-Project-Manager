@@ -86,7 +86,7 @@ def trigger_autofix(
 
     task = apply_autofix.apply_async(
         args=[job.id, report_id, current_user.github_token, report.repository],
-        queue="autofix",
+        queue="autofix_v1",
     )
     job.celery_task_id = task.id
     db.commit()

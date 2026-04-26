@@ -28,8 +28,8 @@ celery_app.conf.update(
     task_acks_late=True,
     worker_prefetch_multiplier=1,
     task_routes={
-        "backend.workers.tasks.analyze_repository": {"queue": "analysis"},
-        "backend.workers.tasks.apply_autofix": {"queue": "autofix"},
+        "backend.workers.tasks.analyze_repository": {"queue": "analysis_v1"},
+        "backend.workers.tasks.apply_autofix": {"queue": "autofix_v1"},
     },
     task_soft_time_limit=300,   # 5 min soft limit
     task_time_limit=600,        # 10 min hard limit

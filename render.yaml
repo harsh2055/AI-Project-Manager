@@ -7,7 +7,7 @@ services:
     plan: starter
     pythonVersion: 3.11.9
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: bash -c "celery -A backend.workers.celery_app worker --loglevel=info -Q analysis,autofix --concurrency=1 & uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+    startCommand: 'bash -c "celery -A backend.workers.celery_app worker --loglevel=info -Q analysis_v1,autofix_v1 --concurrency=1 & uvicorn backend.main:app --host 0.0.0.0 --port $PORT"'
     envVars:
       - key: PYTHONPATH
         value: .

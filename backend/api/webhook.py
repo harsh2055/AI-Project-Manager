@@ -56,7 +56,7 @@ async def github_webhook(request: Request, db: Session = Depends(get_db)):
     # Queue Celery task
     task = analyze_repository.apply_async(
         args=[job.id, task_payload],
-        queue="analysis",
+        queue="analysis_v1",
     )
     job.celery_task_id = task.id
     db.commit()

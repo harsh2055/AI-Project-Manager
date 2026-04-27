@@ -134,6 +134,77 @@
     <!-- Main Content -->
     <main class="content">
 
+      <!-- ── LANDING PAGE ── -->
+      <div class="page hidden" id="pageLanding">
+        <section class="hero">
+          <div class="hero-inner">
+            <div class="hero-text">
+              <span class="hero-badge">AI-Powered Engineering</span>
+              <h1 class="hero-title">Master Your Code with <span class="gradient-text">CodeSense</span></h1>
+              <p class="hero-desc">The ultimate platform for automated code reviews, security audits, and intelligent fixes. Detect vulnerabilities and improve code quality on every push.</p>
+              <div class="hero-btns">
+                <button class="btn-primary lg" onclick="openAuthModal('signup')">Get Started Now</button>
+                <button class="btn-ghost lg" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Learn More</button>
+              </div>
+            </div>
+            <div class="hero-visual">
+              <div class="mockup-window">
+                <div class="mockup-header">
+                  <div class="m-dot red"></div><div class="m-dot amber"></div><div class="m-dot green"></div>
+                </div>
+                <div class="mockup-content">
+                  <div class="m-line"><span class="m-keyword">def</span> <span class="m-func">process_request</span>(req):</div>
+                  <div class="m-line indent"><span class="m-comment"># Warning: Direct execution detected</span></div>
+                  <div class="m-line indent"><span class="m-err">os.system(req.cmd)</span></div>
+                  <div class="m-ai-box">
+                    <div class="m-ai-header">🤖 AI Suggestion</div>
+                    <div class="m-ai-body">Use <span class="m-code">subprocess.run</span> with shell=False to prevent injection.</div>
+                    <button class="m-ai-btn">Auto-Fix →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="features-section" id="features">
+          <div class="section-header">
+            <h2 class="section-title">Built for Modern Teams</h2>
+            <p class="section-sub">Everything you need to ship secure, high-quality code faster.</p>
+          </div>
+          <div class="features-grid">
+            <div class="feature-item">
+              <div class="feature-icon-box">🛡️</div>
+              <h3>Security Auditing</h3>
+              <p>Identify OWASP Top 10 vulnerabilities, hardcoded secrets, and unsafe patterns automatically.</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon-box">🧠</div>
+              <h3>AI Intelligence</h3>
+              <p>Leverage state-of-the-art LLMs to explain complex logic errors and suggest precise refactors.</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon-box">🔄</div>
+              <h3>GitHub Sync</h3>
+              <p>Native integration with GitHub Webhooks. Analysis starts the moment you push code.</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon-box">✨</div>
+              <h3>One-Click PRs</h3>
+              <p>Generate "Auto-Fix" pull requests directly from the dashboard to patch issues instantly.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="cta-banner">
+          <div class="cta-inner">
+            <h2>Ready to secure your codebase?</h2>
+            <p>Join developers who trust CodeSense for their code intelligence.</p>
+            <button class="btn-primary lg" onclick="openAuthModal('signup')">Sign Up Free</button>
+          </div>
+        </section>
+      </div>
+
       <!-- ── OVERVIEW PAGE ── -->
       <div class="page active" id="pageOverview">
         <div class="page-header">

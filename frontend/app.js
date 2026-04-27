@@ -67,6 +67,17 @@ function showPage(name) {
   
   document.getElementById('nav' + name.charAt(0).toUpperCase() + name.slice(1))?.classList.add('active');
 
+  // Toggle Sidebar visibility
+  const sidebar = document.querySelector('.sidebar');
+  const app = document.querySelector('.app');
+  if (name === 'landing') {
+    sidebar?.classList.add('hidden');
+    app?.classList.add('landing-mode');
+  } else {
+    sidebar?.classList.remove('hidden');
+    app?.classList.remove('landing-mode');
+  }
+
   if (name === 'overview') loadOverview();
   else if (name === 'reports') loadReports();
   else if (name === 'jobs') loadJobs();
@@ -191,7 +202,7 @@ function signOut() {
   localStorage.removeItem('cs_token');
   localStorage.removeItem('cs_user');
   renderUserUI();
-  showPage('overview');
+  showPage('landing');
 }
 
 function renderUserUI() {
@@ -708,7 +719,11 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(checkHealth, 30000);
   setInterval(loadBadgesOnly, 5000);
 
-  showPage('overview');
+  if (state.user) {
+    showPage('overview');
+  } else {
+    showPage('landing');
+  }
 
   // Close modal on backdrop click
   document.getElementById('authModal')?.addEventListener('click', e => {

@@ -110,3 +110,14 @@ def delete_report(
     db.delete(report)
     db.commit()
     return {"status": "deleted"}
+
+
+@router.delete("")
+def delete_all_reports(
+    db: Session = Depends(get_db),
+    current_user: orm.User = Depends(get_current_user),
+):
+    """Delete ALL reports for the authenticated user."""
+    db.query(orm.Report).filter(orm.Report.user_id == current_user.id).delete()
+    db.commit()
+    return {"status": "all deleted"}

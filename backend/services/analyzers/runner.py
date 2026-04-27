@@ -222,35 +222,42 @@ def _get_analyzers_for_file(filepath: str) -> List[Analyzer]:
     return matches
 
 
+from pathlib import Path
+
 def analyze_files(changed_files: List[str], repo_root: str) -> List[Issue]:
     """
     Run all applicable analyzers on changed files.
     Returns deduplicated list of issues.
     """
     # Use absolute path for repo_root to avoid confusion with relative paths in subprocess.run
-    repo_root = os.path.abspath(repo_root)
+    root_path = Path(repo_root).resolve()
     all_issues: List[Issue] = []
     ran_dep_audit = False
 
-    for rel_path in changed_files:
-        abs_path = os.path.join(repo_root, rel_path)
-        if not os.path.isfile(abs_path):
+    for rel_path_str in changed_files:
+        # rel_path_str might be something like "backend/main.py"
+        rel_path = Path(rel_path_str)
+        abs_path = root_path / rel_path
+
+        if not abs_path.is_file():
+            # If file doesn't exist in the clone (e.g. deleted in this commit), skip it
             continue
 
-        analyzers = _get_analyzers_for_file(rel_path)
+        analyzers = _get_analyzers_for_file(rel_path_str)
         for analyzer in analyzers:
             if analyzer.name == "pip-audit":
                 if ran_dep_audit:
                     continue
                 ran_dep_audit = True
             try:
-                # Pass absolute path to analyzer. Tools like flake8/pylint 
-                # will run in repo_root (via cwd) and handle the absolute path correctly.
-                issues = analyzer.analyze(abs_path, repo_root)
+                # Pass absolute path as string to analyzer.
+                # Tools like flake8/pylint will run in root_path (via cwd) 
+                # and handle the absolute path correctly.
+                issues = analyzer.analyze(str(abs_path), str(root_path))
                 all_issues.extend(issues)
             except Exception as e:
                 # Don't let one analyzer crash the whole pipeline
-                print(f"[runner] {analyzer.name} failed on {rel_path}: {e}")
+                print(f"[runner] {analyzer.name} failed on {rel_path_str}: {e}")
 
     # Dedup by (file, line, message)
     seen = set()

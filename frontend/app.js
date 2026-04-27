@@ -515,6 +515,22 @@ async function confirmDeleteReport(reportId) {
   } catch (e) { alert('Delete failed: ' + e.message); }
 }
 
+async function deleteAllReports() {
+  if (!confirm('Are you sure you want to delete ALL reports? This cannot be undone.')) return;
+  try {
+    const res = await api('/reports', { method: 'DELETE' });
+    if (res.ok) {
+      state.currentReportId = null;
+      document.getElementById('reportDetail').classList.add('hidden');
+      document.getElementById('reportDetailEmpty').classList.remove('hidden');
+      await loadReports();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert('Clear All failed: ' + (err.detail || res.statusText || 'Unknown error'));
+    }
+  } catch (e) { alert('Clear All failed: ' + e.message); }
+}
+
 /* ── Jobs Page ──────────────────────────────────────────────── */
 async function loadJobs() {
   const el = document.getElementById('jobsList');

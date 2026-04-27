@@ -227,6 +227,8 @@ def analyze_files(changed_files: List[str], repo_root: str) -> List[Issue]:
     Run all applicable analyzers on changed files.
     Returns deduplicated list of issues.
     """
+    # Use absolute path for repo_root to avoid confusion with relative paths in subprocess.run
+    repo_root = os.path.abspath(repo_root)
     all_issues: List[Issue] = []
     ran_dep_audit = False
 
@@ -242,6 +244,8 @@ def analyze_files(changed_files: List[str], repo_root: str) -> List[Issue]:
                     continue
                 ran_dep_audit = True
             try:
+                # Pass absolute path to analyzer. Tools like flake8/pylint 
+                # will run in repo_root (via cwd) and handle the absolute path correctly.
                 issues = analyzer.analyze(abs_path, repo_root)
                 all_issues.extend(issues)
             except Exception as e:

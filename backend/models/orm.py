@@ -46,6 +46,7 @@ class Report(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="reports")
+    jobs = relationship("Job", back_populates="report", cascade="all, delete-orphan")
 
 
 class Job(Base):
@@ -64,3 +65,4 @@ class Job(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     owner = relationship("User", back_populates="jobs")
+    report = relationship("Report", back_populates="jobs")

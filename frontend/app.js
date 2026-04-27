@@ -508,6 +508,9 @@ async function confirmDeleteReport(reportId) {
       document.getElementById('reportDetail').classList.add('hidden');
       document.getElementById('reportDetailEmpty').classList.remove('hidden');
       await loadReports();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert('Delete failed: ' + (err.detail || res.statusText || 'Unknown error'));
     }
   } catch (e) { alert('Delete failed: ' + e.message); }
 }

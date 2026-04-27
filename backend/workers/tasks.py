@@ -66,18 +66,33 @@ def analyze_repository(self, job_id: str, payload: dict):
             # Run analysis
             raw_issues = analyze_files(changed_files, local_path)
 
-            # Get AI suggestions in parallel to speed up processing
+            # Get AI suggestions in parallel (prioritizing critical/high issues)
             from concurrent.futures import ThreadPoolExecutor
             
-            issues_with_suggestions = []
-            issues_to_process = raw_issues[:20]  # Cap at 20 most important issues
+            # Sort issues: Critical/High first
+            severity_map = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
+            sorted_issues = sorted(raw_issues, key=lambda x: severity_map.get(x.severity, 5))
+            
+            # Only get AI suggestions for top 15 non-INFO issues to save time
+            issues_to_process = [iss for iss in sorted_issues if iss.severity != "INFO"][:15]
             
             def process_issue(issue):
                 suggestion = get_ai_suggestion(issue, local_path)
                 return IssueWithSuggestion(issue=issue, suggestion=suggestion)
 
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                issues_with_suggestions = list(executor.map(process_issue, issues_to_process))
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                processed_results = list(executor.map(process_issue, issues_to_process))
+            
+            # Map back to all issues (some without suggestions)
+            processed_map = {res.issue.message + str(res.issue.line): res for res in processed_results}
+            issues_with_suggestions = []
+            for issue in raw_issues:
+                key = issue.message + str(issue.line)
+                if key in processed_map:
+                    issues_with_suggestions.append(processed_map[key])
+                else:
+                    # No AI suggestion for lower priority issues
+                    issues_with_suggestions.append(IssueWithSuggestion(issue=issue, suggestion=None))
 
             # Save report to DB
             report = create_report_db(

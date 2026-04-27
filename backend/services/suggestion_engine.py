@@ -139,19 +139,29 @@ def _parse_ai_response(raw: str) -> AISuggestion:
         )
 
 
-def get_ai_suggestion(issue: Issue, repo_local_path: str) -> Optional[AISuggestion]:
-    filepath = os.path.join(repo_local_path, issue.file)
-    snippet = _extract_code_snippet(filepath, issue.line)
-    lang = getattr(issue, "language", "python")
-    lang_ctx = LANGUAGE_CONTEXT.get(lang, "")
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def _get_cached_suggestion(
+    file: str, 
+    line: int, 
+    language: str, 
+    issue_type: str, 
+    tool: str, 
+    message: str, 
+    repo_local_path: str,
+    snippet: str
+) -> AISuggestion:
+    """Internal cached helper for AI suggestions. Passing snippet to cache ensures correctness."""
+    lang_ctx = LANGUAGE_CONTEXT.get(language, "")
 
     prompt = DIFF_AWARE_PROMPT.format(
-        file=issue.file,
-        line=issue.line,
-        language=lang,
-        type=issue.type,
-        tool=issue.tool,
-        message=issue.message,
+        file=file,
+        line=line,
+        language=language,
+        type=issue_type,
+        tool=tool,
+        message=message,
         language_context=lang_ctx,
         code_snippet=snippet,
     )
@@ -166,3 +176,25 @@ def get_ai_suggestion(issue: Issue, repo_local_path: str) -> Optional[AISuggesti
             fix="Check provider configuration.",
             improved_code="",
         )
+
+
+def get_ai_suggestion(issue: Issue, repo_local_path: str) -> AISuggestion:
+    """
+    Get AI-powered suggestion for a specific issue.
+    Uses an internal LRU cache to avoid redundant calls.
+    """
+    filepath = os.path.join(repo_local_path, issue.file)
+    # Extract snippet outside cache to use it in cache key (ensures correct cache invalidation if code changes)
+    snippet = _extract_code_snippet(filepath, issue.line)
+    
+    # We pass all identifying fields to the cache helper
+    return _get_cached_suggestion(
+        file=issue.file,
+        line=issue.line,
+        language=getattr(issue, "language", "python"),
+        issue_type=issue.severity, # Use severity as type in prompt
+        tool=issue.tool,
+        message=issue.message,
+        repo_local_path=repo_local_path,
+        snippet=snippet
+    )

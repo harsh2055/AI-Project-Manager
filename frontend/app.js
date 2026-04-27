@@ -570,19 +570,37 @@ async function loadJobs() {
 }
 
 function jobRowHTML(job) {
+  let action = '<span></span>';
+  if (job.status === 'processing' || job.status === 'pending') {
+    action = `<button class="btn-cancel" onclick="cancelJob('${job.id}')">Cancel</button>`;
+  } else if (job.report_id) {
+    action = `<a class="job-action" href="#" onclick="goToReport('${job.report_id}');return false;">View report →</a>`;
+  }
+
   return `
     <div class="job-card job-${job.status}">
       <div class="job-indicator"></div>
-      <div>
+      <div style="flex:1">
         <div class="job-repo">${esc(job.repository)}</div>
         <div class="job-meta">${esc(job.branch)} · ${esc(job.commit_sha.slice(0, 8))} · ${fmtDate(job.created_at)}</div>
         ${job.error_message ? `<div class="job-err">${esc(job.error_message)}</div>` : ''}
       </div>
       <span class="job-status">${job.status}</span>
-      ${job.report_id
-      ? `<a class="job-action" href="#" onclick="goToReport('${job.report_id}');return false;">View report →</a>`
-      : '<span></span>'}
+      ${action}
     </div>`;
+}
+
+async function cancelJob(jobId) {
+  if (!confirm('Are you sure you want to cancel this analysis?')) return;
+  try {
+    const res = await api(`/jobs/${jobId}/cancel`, { method: 'POST' });
+    if (res.ok) {
+      await loadJobs();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert('Cancel failed: ' + (err.detail || res.statusText || 'Unknown error'));
+    }
+  } catch (e) { alert('Cancel failed: ' + e.message); }
 }
 
 /* ── Background Badge Polling ───────────────────────────────── */

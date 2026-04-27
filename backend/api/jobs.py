@@ -41,3 +41,32 @@ def get_job(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return JobStatus.model_validate(job)
+
+
+@router.post("/{job_id}/cancel")
+def cancel_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: orm.User = Depends(get_current_user),
+):
+    """Cancel a running or pending job."""
+    job = db.query(orm.Job).filter(
+        orm.Job.id == job_id,
+        orm.Job.user_id == current_user.id
+    ).first()
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    if job.status not in ["pending", "processing"]:
+        return {"status": "already finished", "job_status": job.status}
+
+    if job.celery_task_id:
+        from backend.workers.celery_app import celery_app
+        celery_app.control.revoke(job.celery_task_id, terminate=True)
+    
+    job.status = "failed"
+    job.error_message = "Cancelled by user"
+    db.commit()
+    
+    return {"status": "cancelled", "job_id": job_id}

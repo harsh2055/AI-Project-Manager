@@ -66,13 +66,18 @@ def analyze_repository(self, job_id: str, payload: dict):
             # Run analysis
             raw_issues = analyze_files(changed_files, local_path)
 
-            # Get AI suggestions
+            # Get AI suggestions in parallel to speed up processing
+            from concurrent.futures import ThreadPoolExecutor
+            
             issues_with_suggestions = []
-            for issue in raw_issues[:30]:  # cap at 30 to avoid timeout
+            issues_to_process = raw_issues[:20]  # Cap at 20 most important issues
+            
+            def process_issue(issue):
                 suggestion = get_ai_suggestion(issue, local_path)
-                issues_with_suggestions.append(
-                    IssueWithSuggestion(issue=issue, suggestion=suggestion)
-                )
+                return IssueWithSuggestion(issue=issue, suggestion=suggestion)
+
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                issues_with_suggestions = list(executor.map(process_issue, issues_to_process))
 
             # Save report to DB
             report = create_report_db(

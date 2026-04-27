@@ -81,7 +81,9 @@ async def debug_schema():
 
 
 # Serve frontend
-frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+frontend_path = os.path.join(os.path.dirname(BASE_DIR), "frontend")
+
 if os.path.isdir(frontend_path):
     app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 

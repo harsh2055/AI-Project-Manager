@@ -1,207 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Project Manager</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/styles.css"/>
-  <link rel="icon" type="image/png" href="/static/favicon.png">
-</head>
-<body>
-  <div class="noise-overlay"></div>
-  <div class="scan-lines"></div>
 
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeSense — AI Code Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+
+<body>
   <!-- Auth Modal -->
-  <div id="authModal" class="modal-backdrop hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title" id="authModalTitle">// SIGN IN</span>
-        <button class="modal-close" onclick="closeAuthModal()">✕</button>
+  <div id="authModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <button class="modal-dismiss" onclick="closeAuthModal()">×</button>
+      <div class="modal-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="6" fill="#6366F1" />
+          <path d="M7 14h14M14 7l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        <span>CodeSense</span>
       </div>
-      <div class="modal-body">
-        <div id="authError" class="auth-error hidden"></div>
-        <div id="loginForm">
-          <div class="field-group">
-            <label class="field-label">EMAIL</label>
-            <input type="email" id="loginEmail" class="field-input" placeholder="dev@example.com"/>
-          </div>
-          <div class="field-group">
-            <label class="field-label">PASSWORD</label>
-            <input type="password" id="loginPassword" class="field-input" placeholder="••••••••"/>
-          </div>
-          <button class="btn-primary" onclick="handleLogin()">SIGN IN</button>
-          <div class="auth-switch">No account? <span class="link" onclick="switchToSignup()">Sign up</span></div>
+      <h2 class="modal-title" id="authModalTitle">Welcome back</h2>
+      <p class="modal-sub" id="authModalSub">Sign in to your account</p>
+
+      <div id="authError" class="auth-error hidden"></div>
+
+      <div id="loginForm">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@company.com"
+            onkeydown="if(event.key==='Enter')handleLogin()" />
         </div>
-        <div id="signupForm" class="hidden">
-          <div class="field-group">
-            <label class="field-label">USERNAME</label>
-            <input type="text" id="signupUsername" class="field-input" placeholder="devuser"/>
-          </div>
-          <div class="field-group">
-            <label class="field-label">EMAIL</label>
-            <input type="email" id="signupEmail" class="field-input" placeholder="dev@example.com"/>
-          </div>
-          <div class="field-group">
-            <label class="field-label">PASSWORD</label>
-            <input type="password" id="signupPassword" class="field-input" placeholder="••••••••"/>
-          </div>
-          <button class="btn-primary" onclick="handleSignup()">CREATE ACCOUNT</button>
-          <div class="auth-switch">Have an account? <span class="link" onclick="switchToLogin()">Sign in</span></div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••"
+            onkeydown="if(event.key==='Enter')handleLogin()" />
         </div>
+        <button class="btn-primary full" onclick="handleLogin()">Sign in</button>
+        <p class="auth-switch">Don't have an account? <span class="link" onclick="switchToSignup()">Create one</span>
+        </p>
+      </div>
+
+      <div id="signupForm" class="hidden">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="signupUsername" placeholder="devuser" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="you@company.com" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="signupPassword" placeholder="Minimum 8 characters"
+            onkeydown="if(event.key==='Enter')handleSignup()" />
+        </div>
+        <button class="btn-primary full" onclick="handleSignup()">Create account</button>
+        <p class="auth-switch">Already have an account? <span class="link" onclick="switchToLogin()">Sign in</span></p>
       </div>
     </div>
   </div>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-left">
-      <img src="/static/favicon.png" class="logo-img" alt="Logo">
-      <div>
-        <div class="logo-text">AI PROJECT MANAGER</div>
-        <div class="logo-sub">automated code intelligence · v2.0</div>
-      </div>
-    </div>
-    <nav class="header-nav">
-      <button class="nav-btn active" onclick="showView('dashboard')" id="navDashboard">DASHBOARD</button>
-      <button class="nav-btn" onclick="showView('jobs')" id="navJobs">JOBS <span id="activeJobsBadge" class="job-badge hidden">0</span></button>
-    </nav>
-    <div class="header-right">
-      <div class="status-indicator">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">CONNECTING</span>
-      </div>
-      <div id="userArea">
-        <button class="btn-ghost" onclick="openAuthModal()">SIGN IN</button>
-      </div>
-    </div>
-  </header>
+  <!-- App Shell -->
+  <div class="app" id="app">
 
-  <!-- Dashboard View -->
-  <main class="main" id="viewDashboard">
-    <!-- Stats Bar -->
-    <div class="stats-bar">
-      <div class="stat-item">
-        <span class="stat-num" id="statTotal">—</span>
-        <span class="stat-lbl">REPORTS</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-num danger" id="statCritical">—</span>
-        <span class="stat-lbl">CRITICAL ≥7</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-num" id="statAvg">—</span>
-        <span class="stat-lbl">AVG SEVERITY</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-num accent" id="statLast" style="font-size:0.9rem">—</span>
-        <span class="stat-lbl">LAST SCAN</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item chart-stat">
-        <canvas id="trendChart" width="220" height="50"></canvas>
-        <span class="stat-lbl">30-DAY TREND</span>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="filter-bar">
-      <div class="filter-left">
-        <input type="text" id="searchInput" class="search-input" placeholder="Search repository..." oninput="debounceFilter()"/>
-        <div class="filter-pills">
-          <button class="pill active" data-filter="all" onclick="setFilter('all')">ALL</button>
-          <button class="pill" data-filter="security" onclick="setFilter('security')">SECURITY</button>
-          <button class="pill" data-filter="error" onclick="setFilter('error')">ERRORS</button>
-          <button class="pill" data-filter="warning" onclick="setFilter('warning')">WARNINGS</button>
-          <button class="pill" data-filter="high" onclick="setFilter('high')">CRITICAL</button>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="6" fill="#6366F1" />
+            <path d="M7 14h14M14 7l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+          <span class="brand-name">CodeSense</span>
         </div>
-      </div>
-      <div class="filter-right">
-        <select class="sort-select" onchange="setSortAndReload(this.value)">
-          <option value="newest">NEWEST FIRST</option>
-          <option value="severity">HIGHEST SEVERITY</option>
-          <option value="issues">MOST ISSUES</option>
-        </select>
-        <button class="btn-ghost small" onclick="loadReports()">↻ REFRESH</button>
-      </div>
-    </div>
 
-    <!-- Content Grid -->
-    <div class="content-grid">
-      <!-- Reports List -->
-      <section class="panel reports-panel">
-        <div class="panel-hdr">
-          <span>// REPORTS</span>
-          <span id="reportCount" class="dim-text"></span>
-        </div>
-        <div id="reportsList" class="reports-list">
-          <div class="state-loading"><span class="blink">█</span> Loading...</div>
-        </div>
-      </section>
-
-      <!-- Detail Panel -->
-      <section class="panel detail-panel">
-        <div class="panel-hdr" id="detailHdr">
-          <span id="detailTitle">// SELECT A REPORT</span>
-          <div class="detail-actions" id="detailActions" style="display:none">
-            <span id="detailScore" class="score-pill"></span>
-            <button class="btn-autofix" id="autofixBtn" onclick="triggerAutoFix()" style="display:none">⚡ AUTO-FIX PR</button>
+        <div class="sidebar-user hidden" id="sidebarUser">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <div class="user-info-mini">
+            <div class="user-name" id="userName">—</div>
+            <div class="user-email" id="userEmail">—</div>
           </div>
         </div>
-        <div id="reportDetail" class="report-detail">
-          <div class="state-empty">
-            <div class="empty-glyph">◈</div>
-            <p>Select a report to inspect issues and AI suggestions</p>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
+      </div>
 
-  <!-- Jobs View -->
-  <main class="main hidden" id="viewJobs">
-    <div class="webhook-info-panel hidden" id="webhookInfoPanel">
-      <div class="panel-hdr">// WEBHOOK CONFIGURATION</div>
-      <div class="webhook-content">
-        <p class="dim-text">Connect your GitHub repositories to trigger automatic analysis on every commit or PR.</p>
-        <div class="webhook-url-box">
-          <label>YOUR SECURE PAYLOAD URL</label>
-          <div class="url-input-group">
-            <input type="text" id="webhookUrlInput" readonly value=""/>
-            <button class="btn-primary small" onclick="copyWebhookUrl()">COPY URL</button>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" id="navOverview" onclick="showPage('overview')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5" />
+            <rect x="10" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5" />
+            <rect x="1" y="10" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5" />
+            <rect x="10" y="10" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+          Overview
+        </button>
+        <button class="nav-item" id="navReports" onclick="showPage('reports')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor"
+              stroke-width="1.5" />
+            <path d="M5 6h6M5 9h6M5 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+          Reports
+          <span class="nav-badge hidden" id="reportsBadge">0</span>
+        </button>
+        <button class="nav-item" id="navJobs" onclick="showPage('jobs')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" />
+            <path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+          Job Queue
+          <span class="nav-badge pulse hidden" id="jobsBadge">0</span>
+        </button>
+        <button class="nav-item" id="navSetup" onclick="showPage('setup')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5" />
+            <path
+              d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+          Webhook Setup
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="api-status" id="apiStatus">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Connecting...</span>
+        </div>
+        <button class="sign-out-btn hidden" id="signOutBtn" onclick="signOut()">Sign out</button>
+        <button class="btn-outline full" id="signInBtnSidebar" onclick="openAuthModal('login')">Sign in</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+
+      <!-- ── OVERVIEW PAGE ── -->
+      <div class="page active" id="pageOverview">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Overview</h1>
+            <p class="page-sub" id="overviewSub">Your code intelligence dashboard</p>
+          </div>
+          <button class="btn-primary" onclick="showPage('setup')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1v12M1 7h12" stroke="white" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Connect Repo
+          </button>
+        </div>
+
+        <!-- Auth gate for overview -->
+        <div class="auth-gate" id="overviewAuthGate">
+          <div class="gate-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <rect x="8" y="20" width="32" height="24" rx="4" stroke="#6366F1" stroke-width="2" />
+              <path d="M16 20v-6a8 8 0 0116 0v6" stroke="#6366F1" stroke-width="2" stroke-linecap="round" />
+              <circle cx="24" cy="32" r="3" fill="#6366F1" />
+            </svg>
+          </div>
+          <h2>Sign in to get started</h2>
+          <p>Connect your GitHub repositories and get AI-powered code analysis on every commit.</p>
+          <div class="gate-actions">
+            <button class="btn-primary" onclick="openAuthModal('signup')">Create free account</button>
+            <button class="btn-ghost" onclick="openAuthModal('login')">Sign in</button>
+          </div>
+          <div class="feature-list">
+            <div class="feature-item"><span class="feat-check">✓</span> Per-user data isolation — your repos stay
+              private</div>
+            <div class="feature-item"><span class="feat-check">✓</span> AI analysis on every push</div>
+            <div class="feature-item"><span class="feat-check">✓</span> Auto-fix PRs for detected issues</div>
           </div>
         </div>
-        <div class="webhook-steps">
-          <div class="step"><span>1</span> Go to <strong>Repo Settings > Webhooks > Add webhook</strong></div>
-          <div class="step"><span>2</span> Paste the <strong>Payload URL</strong> above</div>
-          <div class="step"><span>3</span> Set Content type to <strong>application/json</strong></div>
-          <div class="step"><span>4</span> Select <strong>Just the push event</strong> or choose individual events</div>
+
+        <!-- Overview content (shown when authed) -->
+        <div class="hidden" id="overviewContent">
+          <!-- Stat cards -->
+          <div class="stat-grid" id="statGrid">
+            <div class="stat-card">
+              <div class="stat-label">Total Scans</div>
+              <div class="stat-value" id="statTotal">—</div>
+            </div>
+            <div class="stat-card danger">
+              <div class="stat-label">Critical Issues</div>
+              <div class="stat-value" id="statCritical">—</div>
+            </div>
+            <div class="stat-card warning">
+              <div class="stat-label">Avg Severity</div>
+              <div class="stat-value" id="statAvg">—</div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-label">Last Scan</div>
+              <div class="stat-value small" id="statLast">—</div>
+            </div>
+          </div>
+
+          <!-- Recent Reports preview -->
+          <div class="section">
+            <div class="section-hdr">
+              <h2 class="section-title">Recent Scans</h2>
+              <button class="btn-ghost small" onclick="showPage('reports')">View all →</button>
+            </div>
+            <div id="overviewRecentList" class="recent-list">
+              <div class="skeleton-list">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Jobs preview -->
+          <div class="section" id="overviewJobsSection" style="display:none">
+            <div class="section-hdr">
+              <h2 class="section-title">Active Jobs</h2>
+              <button class="btn-ghost small" onclick="showPage('jobs')">View queue →</button>
+            </div>
+            <div id="overviewJobsList" class="recent-list"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="jobs-header">
-      <h2 class="section-title">// ASYNC JOB QUEUE</h2>
-      <button class="btn-ghost small" onclick="loadJobs()">↻ REFRESH</button>
-    </div>
-    <div id="jobsList" class="jobs-list">
-      <div class="state-loading"><span class="blink">█</span> Loading jobs...</div>
-    </div>
-  </main>
+      <!-- ── REPORTS PAGE ── -->
+      <div class="page hidden" id="pageReports">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Reports</h1>
+            <p class="page-sub">All analysis reports for your repositories</p>
+          </div>
+          <div class="hdr-actions">
+            <div class="search-wrap">
+              <svg class="search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5" />
+                <path d="M9.5 9.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+              <input type="text" id="searchInput" class="search-input" placeholder="Search repositories..."
+                oninput="debounceFilter()" />
+            </div>
+            <button class="btn-ghost" onclick="loadReports()">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7a5 5 0 105 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                <path d="M2 10V7h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+              Refresh
+            </button>
+          </div>
+        </div>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <span>AI PROJECT MANAGER v2.0</span>
-    <span class="sep">//</span>
-    <span id="apiEndpoint">API: localhost:8000</span>
-    <span class="sep">//</span>
-    <span id="footerClock"></span>
-  </footer>
+        <!-- Filter tabs -->
+        <div class="filter-tabs">
+          <button class="tab active" data-filter="all" onclick="setFilter('all', this)">All</button>
+          <button class="tab" data-filter="security" onclick="setFilter('security', this)">Security</button>
+          <button class="tab" data-filter="error" onclick="setFilter('error', this)">Errors</button>
+          <button class="tab" data-filter="warning" onclick="setFilter('warning', this)">Warnings</button>
+          <button class="tab danger" data-filter="high" onclick="setFilter('high', this)">Critical ≥7</button>
+          <div class="tab-spacer"></div>
+          <select class="sort-select" onchange="state.activeSort=this.value; renderReportsList()">
+            <option value="newest">Newest first</option>
+            <option value="severity">Highest severity</option>
+            <option value="issues">Most issues</option>
+          </select>
+        </div>
+
+        <div class="reports-layout">
+          <!-- List panel -->
+          <div class="reports-list-panel">
+            <div class="list-meta">
+              <span id="reportCount" class="meta-text">Loading...</span>
+            </div>
+            <div id="reportsList" class="reports-list"></div>
+          </div>
+
+          <!-- Detail panel -->
+          <div class="report-detail-panel">
+            <div id="reportDetailEmpty" class="detail-empty">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect x="8" y="4" width="24" height="32" rx="3" stroke="#94A3B8" stroke-width="2" />
+                <path d="M14 14h12M14 20h12M14 26h8" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <p>Select a report to view details and AI suggestions</p>
+            </div>
+            <div id="reportDetail" class="hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── JOBS PAGE ── -->
+      <div class="page hidden" id="pageJobs">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Job Queue</h1>
+            <p class="page-sub">Async analysis and auto-fix tasks</p>
+          </div>
+          <button class="btn-ghost" onclick="loadJobs()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 7a5 5 0 105 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              <path d="M2 10V7h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <div id="jobsList" class="jobs-container">
+          <div class="skeleton-list">
+            <div class="skeleton-row tall"></div>
+            <div class="skeleton-row tall"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SETUP PAGE ── -->
+      <div class="page hidden" id="pageSetup">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Webhook Setup</h1>
+            <p class="page-sub">Connect GitHub repositories to trigger automatic analysis</p>
+          </div>
+        </div>
+
+        <div class="setup-grid">
+          <!-- Webhook URL -->
+          <div class="setup-card" id="setupWebhookCard">
+            <div class="setup-card-hdr">
+              <div class="setup-icon indigo">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M4 10c0-3.314 2.686-6 6-6s6 2.686 6 6-2.686 6-6 6-6-2.686-6-6z" stroke="white"
+                    stroke-width="1.5" />
+                  <path d="M10 7v3l2 2" stroke="white" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+              </div>
+              <div>
+                <h3>Your Webhook URL</h3>
+                <p>Unique to your account — only your pushes trigger analysis</p>
+              </div>
+            </div>
+            <div class="webhook-url-section hidden" id="webhookUrlSection">
+              <div class="url-row">
+                <input type="text" id="webhookUrlInput" readonly class="url-input" />
+                <button class="btn-primary small" onclick="copyWebhookUrl()">Copy</button>
+                <button class="btn-ghost small" onclick="regenerateSecret()" title="Regenerate secret">↺</button>
+              </div>
+              <p class="hint-text">⚠️ Regenerating the secret will invalidate all existing webhook connections.</p>
+            </div>
+            <div class="auth-needed hidden" id="webhookAuthNeeded">
+              <button class="btn-primary" onclick="openAuthModal('login')">Sign in to get your webhook URL</button>
+            </div>
+          </div>
+
+          <!-- Steps -->
+          <div class="setup-card">
+            <div class="setup-card-hdr">
+              <div class="setup-icon purple">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 2L2 7v6l8 5 8-5V7L10 2z" stroke="white" stroke-width="1.5" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <div>
+                <h3>GitHub Configuration</h3>
+                <p>Add webhook in your repository settings</p>
+              </div>
+            </div>
+            <ol class="steps">
+              <li><strong>Repo Settings</strong> → Webhooks → Add webhook</li>
+              <li>Paste your <strong>Payload URL</strong> from above</li>
+              <li>Set Content type to <code>application/json</code></li>
+              <li>Select <strong>Push events</strong> (or all events)</li>
+              <li>Click <strong>Add webhook</strong> — push a commit to test</li>
+            </ol>
+          </div>
+
+          <!-- GitHub Token -->
+          <div class="setup-card" id="githubTokenCard">
+            <div class="setup-card-hdr">
+              <div class="setup-icon green">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M10 2C5.58 2 2 5.58 2 10c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0018 10c0-4.42-3.58-8-8-8z"
+                    fill="white" />
+                </svg>
+              </div>
+              <div>
+                <h3 id="ghTokenTitle">Connect GitHub Account</h3>
+                <p id="ghTokenSub">Required for posting comments and Auto-Fix PRs</p>
+              </div>
+            </div>
+            <div id="ghTokenConnected" class="hidden">
+              <div class="connected-badge">
+                <span class="status-dot green"></span>
+                Connected as <strong id="ghUsername">—</strong>
+              </div>
+              <button class="btn-ghost small" onclick="disconnectGitHub()">Disconnect</button>
+            </div>
+            <div id="ghTokenForm">
+              <div class="field">
+                <label>Personal Access Token</label>
+                <input type="password" id="ghTokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+              </div>
+              <button class="btn-primary" onclick="connectGitHub()">Connect GitHub</button>
+              <p class="hint-text">Needs <code>repo</code> and <code>read:user</code> scopes. <a
+                  href="https://github.com/settings/tokens" target="_blank">Create token →</a></p>
+            </div>
+          </div>
+
+          <!-- How it works -->
+          <div class="setup-card">
+            <div class="setup-card-hdr">
+              <div class="setup-icon amber">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 2l2.09 6.26H18L13.18 12l2.09 6.26L10 14.52 4.73 18.26 6.82 12 2 8.26h5.91L10 2z"
+                    fill="white" />
+                </svg>
+              </div>
+              <div>
+                <h3>How it works</h3>
+                <p>The full analysis pipeline</p>
+              </div>
+            </div>
+            <div class="flow-steps">
+              <div class="flow-step"><span class="flow-num">1</span><span>GitHub push triggers webhook to your unique
+                  URL</span></div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step"><span class="flow-num">2</span><span>Repo is cloned, changed files analyzed
+                  (flake8, pylint, bandit, eslint)</span></div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step"><span class="flow-num">3</span><span>AI generates specific, actionable fix
+                  suggestions per issue</span></div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-step"><span class="flow-num">4</span><span>Report appears in your dashboard — only
+                  visible to you</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>
+
 </html>

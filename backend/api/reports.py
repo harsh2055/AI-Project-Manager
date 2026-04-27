@@ -1,5 +1,5 @@
 """
-Reports API — list, detail, filtering, auto-fix trigger
+Reports API — fully user-scoped, no unauthenticated access to report data.
 """
 import uuid
 from typing import Optional, List
@@ -9,7 +9,7 @@ from backend.database import get_db
 from backend.models import orm
 from backend.models.schemas import AnalysisReport, ReportSummary
 from backend.services.report_service import get_report_db, list_reports_db, get_severity_trend
-from backend.auth.jwt import get_optional_user, get_current_user
+from backend.auth.jwt import get_current_user  # Always require auth
 from backend.workers.tasks import apply_autofix
 
 router = APIRouter()
@@ -22,12 +22,16 @@ def list_reports(
     severity_min: Optional[float] = Query(None, ge=0, le=10),
     repository: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: Optional[orm.User] = Depends(get_optional_user),
+    current_user: orm.User = Depends(get_current_user),  # Auth required
 ):
-    user_id = current_user.id if current_user else None
+    """List reports — only returns the authenticated user's own reports."""
     return list_reports_db(
-        db, user_id=user_id, limit=limit, offset=offset,
-        severity_min=severity_min, repository=repository,
+        db,
+        user_id=current_user.id,
+        limit=limit,
+        offset=offset,
+        severity_min=severity_min,
+        repository=repository,
     )
 
 
@@ -35,20 +39,20 @@ def list_reports(
 def severity_trend(
     days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: Optional[orm.User] = Depends(get_optional_user),
+    current_user: orm.User = Depends(get_current_user),
 ):
-    user_id = current_user.id if current_user else None
-    return get_severity_trend(db, user_id=user_id, days=days)
+    """Return severity trend for the authenticated user only."""
+    return get_severity_trend(db, user_id=current_user.id, days=days)
 
 
 @router.get("/{report_id}", response_model=AnalysisReport)
 def get_report(
     report_id: str,
     db: Session = Depends(get_db),
-    current_user: Optional[orm.User] = Depends(get_optional_user),
+    current_user: orm.User = Depends(get_current_user),
 ):
-    user_id = current_user.id if current_user else None
-    report = get_report_db(db, report_id, user_id=user_id)
+    """Get a specific report — user can only access their own reports."""
+    report = get_report_db(db, report_id, user_id=current_user.id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     return report
@@ -60,10 +64,7 @@ def trigger_autofix(
     db: Session = Depends(get_db),
     current_user: orm.User = Depends(get_current_user),
 ):
-    """
-    Trigger automated fix PR for a report.
-    Requires the user to have a connected GitHub token.
-    """
+    """Trigger automated fix PR for a report owned by the current user."""
     if not current_user.github_token:
         raise HTTPException(status_code=400, detail="Connect your GitHub account first")
 
@@ -71,7 +72,6 @@ def trigger_autofix(
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
-    # Create autofix job
     job = orm.Job(
         id=str(uuid.uuid4()),
         user_id=current_user.id,
@@ -100,6 +100,7 @@ def delete_report(
     db: Session = Depends(get_db),
     current_user: orm.User = Depends(get_current_user),
 ):
+    """Delete a report — user can only delete their own reports."""
     report = db.query(orm.Report).filter(
         orm.Report.id == report_id,
         orm.Report.user_id == current_user.id,

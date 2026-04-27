@@ -1,6 +1,7 @@
 """
-Auth routes — signup, login, GitHub connect
+Auth routes — signup, login, GitHub connect, webhook management
 """
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.database import get_db
@@ -23,6 +24,7 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
         email=payload.email,
         username=payload.username,
         hashed_password=hash_password(payload.password),
+        webhook_secret=secrets.token_urlsafe(32),  # Cryptographically secure secret
     )
     db.add(user)
     db.commit()
@@ -45,6 +47,17 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: orm.User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+@router.post("/webhook/regenerate")
+def regenerate_webhook_secret(
+    current_user: orm.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Generate a new webhook secret (invalidates previous webhook URLs)."""
+    current_user.webhook_secret = secrets.token_urlsafe(32)
+    db.commit()
+    return {"webhook_secret": current_user.webhook_secret}
 
 
 @router.post("/github/connect")

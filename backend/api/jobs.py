@@ -1,5 +1,5 @@
 """
-Jobs API — query async job status
+Jobs API — user-scoped job status tracking. Users only see their own jobs.
 """
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.models import orm
 from backend.models.schemas import JobStatus
-from backend.auth.jwt import get_optional_user, get_current_user
+from backend.auth.jwt import get_current_user
 
 router = APIRouter()
 
@@ -17,61 +17,27 @@ def list_jobs(
     limit: int = Query(20, ge=1, le=100),
     status: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    current_user: Optional[orm.User] = Depends(get_optional_user),
+    current_user: orm.User = Depends(get_current_user),  # Always require auth
 ):
-    q = db.query(orm.Job)
-    if current_user:
-        from sqlalchemy import or_
-        q = q.filter(or_(orm.Job.user_id == current_user.id, orm.Job.user_id == None))
+    """List jobs — only returns the authenticated user's own jobs."""
+    q = db.query(orm.Job).filter(orm.Job.user_id == current_user.id)
     if status:
         q = q.filter(orm.Job.status == status)
     jobs = q.order_by(orm.Job.created_at.desc()).limit(limit).all()
     return [JobStatus.model_validate(j) for j in jobs]
 
 
-@router.get("/requeue")
-def requeue_stuck_jobs(db: Session = Depends(get_db)):
-    """Re-enqueue jobs that have been pending/processing for too long."""
-    from backend.workers.tasks import analyze_repository
-    import os
-    
-    stuck_jobs = db.query(orm.Job).filter(
-        orm.Job.status.in_(["pending", "processing"])
-    ).all()
-    
-    count = 0
-    github_token = os.getenv("GITHUB_TOKEN", "")
-    
-    for job in stuck_jobs:
-        task_payload = {
-            "repo_url": f"https://github.com/{job.repository}.git",
-            "repo_full_name": job.repository,
-            "commit_sha": job.commit_sha,
-            "branch": job.branch,
-            "changed_files": [],
-            "pr_number": None,
-            "github_token": github_token,
-        }
-        analyze_repository.apply_async(
-            args=[job.id, task_payload],
-            queue="analysis_v1"
-        )
-        count += 1
-        
-    return {"status": "ok", "requeued_count": count}
-
-
 @router.get("/{job_id}", response_model=JobStatus)
 def get_job(
     job_id: str,
     db: Session = Depends(get_db),
-    current_user: Optional[orm.User] = Depends(get_optional_user),
+    current_user: orm.User = Depends(get_current_user),
 ):
-    q = db.query(orm.Job).filter(orm.Job.id == job_id)
-    if current_user:
-        from sqlalchemy import or_
-        q = q.filter(or_(orm.Job.user_id == current_user.id, orm.Job.user_id == None))
-    job = q.first()
+    """Get a job — user can only access their own jobs."""
+    job = db.query(orm.Job).filter(
+        orm.Job.id == job_id,
+        orm.Job.user_id == current_user.id,
+    ).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return JobStatus.model_validate(job)
